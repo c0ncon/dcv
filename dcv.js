@@ -108,11 +108,13 @@
       content.id = 'dgn_content_de'
       content.appendChild(template.content.querySelector('.re_gall_top_1'));
       content.appendChild(template.content.querySelector('.re_gall_box_1'));
-      content.appendChild(template.content.querySelector('.re_gall_box_2'));
       template.content.querySelector('.re_gall_box_3')
         ? content.appendChild(template.content.querySelector('.re_gall_box_3'))
         : content.appendChild(document.createElement('div'));
-      content.appendChild(template.content.querySelector('.re_gall_box_4'));
+      
+      let replyArea = template.content.querySelector('.re_gall_box_4');
+      replyArea.querySelector('.gallery_re_form').remove()
+      content.appendChild(replyArea);
 
       let replyPerPage = document.createElement('input');
       replyPerPage.id = 'comment_num';
