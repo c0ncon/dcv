@@ -6,6 +6,12 @@
 // @match    http://gall.dcinside.com/mgallery/board/lists/*
 // ==/UserScript==
 (function (window) {
+  let config = JSON.parse(localStorage.getItem('dcv')) || {
+    favorites: ['kancolle']
+  };
+  let galleryID = (new URL(location.href)).searchParams.get('id');
+  let galleryTitle = '';
+
   const ajaxRequest = (url, method = 'GET') => {
     return new Promise((resolve, reject) => {
       let xmlhttp = new XMLHttpRequest();
@@ -25,7 +31,6 @@
     });
   };
 
-  let galleryTitle = '';
   const init = () => {
     let galleryList = document.querySelector('.gallery_list');
     galleryList.style.padding = '0';
@@ -45,20 +50,55 @@
 
     let modalDiv = document.createElement('div');
     modalDiv.id = 'contentModal';
-    modalDiv.style.cssText = 'background-color:rgba(0,0,0,0.5);position:fixed;top:0;left:0;width:100%;height:100%;overflow:auto;display:none;padding:0 20px;z-index:2;';
+    Object.assign(modalDiv.style, {
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      overflow: 'auto',
+      display: 'none',
+      padding: '0 20px',
+      zIndex: '2'
+    });
 
     let modalInner = document.createElement('div');
     modalInner.id = 'modalBody';
-    modalInner.style.cssText = 'background-color:#fff;border-radius:3px;max-width:1100px;margin:50px auto;padding:20px;overflow: auto;';
+    Object.assign(modalInner.style, {
+      backgroundColor: '#fff',
+      borderRadius: '3px',
+      maxWidth: '1100px',
+      margin: '50px auto',
+      padding: '20px',
+      overflow: 'auto'
+    });
 
     modalDiv.appendChild(modalInner);
 
     let galleryTop = document.createElement('div');
+    galleryTop.id = 'galleryTop';
+    Object.assign(galleryTop.style, {
+      height: '50px',
+      position: 'relative'
+    });
+    let galleryButtonDiv = document.createElement('div');
+    Object.assign(galleryButtonDiv.style, {
+      float: 'left',
+      position: 'absolute',
+      top: '50%',
+      transform: 'translate(0, -50%)'
+    });
     galleryList.querySelectorAll('.btn_bottom > span > a').forEach((button) => {
       let btn = button.cloneNode(true);
-      btn.querySelector('img').style.padding = '5px';
-      galleryTop.appendChild(btn);
+      btn.querySelector('img').style.margin = '5px';
+      galleryButtonDiv.appendChild(btn);
     });
+    galleryTop.appendChild(galleryButtonDiv);
+
+    let favoritesDiv = getFavoritesDiv();
+    galleryTop.appendChild(favoritesDiv);
+
     body.appendChild(galleryTop);
 
     let galleryLeft = document.createElement('div');
@@ -83,13 +123,76 @@
     });
   };
 
+  const getFavoritesDiv = () => {
+    let favoritesDiv = document.createElement('div');
+    favoritesDiv.id = 'favoritesDiv';
+    Object.assign(favoritesDiv.style, {
+      float: 'right',
+      position: 'absolute',
+      top: '50%',
+      left: '90%',
+      transform: 'translate(0, -50%)'
+    });
+    let favButton = document.createElement('span');
+    favButton.id = 'favButton';
+    favButton.innerHTML = config.favorites.filter((fav) => fav == galleryID).length > 0 ? '-' : '+';
+    Object.assign(favButton.style, {
+      fontSize: '30px'
+    });
+    favButton.addEventListener('click', onClickFavButton);
+    favoritesDiv.appendChild(favButton);
+
+    let dropdown = document.createElement('select');
+    Object.assign(dropdown.style, {
+      margin: '5px',
+      float: 'right'
+    });
+    let placeholderOption = document.createElement('option');
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    placeholderOption.hidden = true;
+    placeholderOption.innerHTML = 'Favorites';
+    dropdown.appendChild(placeholderOption);
+    config.favorites.forEach((fav) => {
+      let el = document.createElement('option');
+      el.innerHTML = fav;
+      el.value = fav;
+      dropdown.appendChild(el);
+    });
+    dropdown.onchange = (e) => {
+      window.location.replace(`http://gall.dcinside.com/${e.target.value}`);
+    }
+    favoritesDiv.appendChild(dropdown);
+    
+    return favoritesDiv;
+  }
+
+  const onClickFavButton = (event) => {
+    event.preventDefault();
+    if (config.favorites.filter((fav) => fav == galleryID).length > 0)
+      config.favorites = config.favorites.filter((fav) => fav !== galleryID);
+    else
+      config.favorites = config.favorites.concat(galleryID);
+
+    config.favorites = config.favorites.sort();
+    localStorage.setItem('dcv', JSON.stringify(config));
+
+    let galleryTop = document.querySelector('#galleryTop');
+    let favoritesDiv = document.querySelector('#favoritesDiv');
+    document.querySelector('#favButton').removeEventListener('click', onClickFavButton);
+    galleryTop.removeChild(favoritesDiv);
+    galleryTop.appendChild(getFavoritesDiv());
+  }
+
   const openContentModal = (event) => {
     let articleURL = event.target.href;
     event.preventDefault();
 
     let scrollBarWidth = window.innerWidth - document.body.offsetWidth;
-    document.body.style.margin = '0px ' + scrollBarWidth + 'px 0px 0px';
-    document.body.style.overflow = 'hidden';
+    Object.assign(document.body.style, {
+      margin: `0px ${scrollBarWidth}px 0px 0px`,
+      overflow: 'hidden'
+    });
 
     let modal = document.querySelector('#contentModal');
     modal.addEventListener('click', () => closeContentModal());
@@ -144,8 +247,10 @@
   };
 
   const closeContentModal = () => {
-    document.body.style.margin = '';
-    document.body.style.overflow = '';
+    Object.assign(document.body.style, {
+      margin: '',
+      overflow: ''
+    });
     document.querySelector('#contentModal').style.display = 'none';
 
     let modalBody = document.querySelector('#modalBody');
