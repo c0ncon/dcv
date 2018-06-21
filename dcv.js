@@ -36,6 +36,10 @@
     galleryList.style.padding = '0';
     galleryTitle = document.title;
     let body = document.body;
+    Object.assign(body.style, {
+      width: '100%',
+      height: '100%'
+    });
 
     let scripts = [
       "http://gall.dcinside.com/_js/ZeroClipboard.min.js",
@@ -58,9 +62,8 @@
       width: '100%',
       height: '100%',
       overflow: 'auto',
-      display: 'none',
-      padding: '0 20px',
-      zIndex: '2'
+      margin: '50px auto',
+      display: 'none'
     });
 
     let modalInner = document.createElement('div');
@@ -69,9 +72,9 @@
       backgroundColor: '#fff',
       borderRadius: '3px',
       maxWidth: '1100px',
-      margin: '50px auto',
-      padding: '20px',
-      overflow: 'auto'
+      margin: '25px auto',
+      padding: '25px',
+      overflow: 'hidden'
     });
 
     modalDiv.appendChild(modalInner);
@@ -80,7 +83,12 @@
     galleryTop.id = 'galleryTop';
     Object.assign(galleryTop.style, {
       height: '50px',
-      position: 'relative'
+      position: 'fixed',
+      backgroundColor: '#fff',
+      top: 0,
+      left: 0,
+      width: '100%',
+      zIndex: 1
     });
     let galleryButtonDiv = document.createElement('div');
     Object.assign(galleryButtonDiv.style, {
@@ -103,7 +111,13 @@
 
     let galleryLeft = document.createElement('div');
     galleryLeft.id = 'dgn_gallery_left';
-    galleryLeft.style.cssText = 'width:100%;height:100%;';
+    Object.assign(galleryLeft.style, {
+      position: 'relative',
+      overflow: 'auto',
+      margin: '50px auto',
+      width: '100%',
+      height: '100%'
+    });
     galleryLeft.appendChild(galleryList);
     body.appendChild(galleryLeft);
     body.appendChild(modalDiv);
@@ -128,9 +142,9 @@
     favoritesDiv.id = 'favoritesDiv';
     Object.assign(favoritesDiv.style, {
       float: 'right',
-      position: 'absolute',
+      position: 'relative',
       top: '50%',
-      left: '90%',
+      right: 0,
       transform: 'translate(0, -50%)'
     });
     let favButton = document.createElement('span');
