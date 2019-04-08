@@ -2,8 +2,8 @@
 // @name     dcv
 // @version  1
 // @grant    none
-// @match    http://gall.dcinside.com/board/lists*
-// @match    http://gall.dcinside.com/mgallery/board/lists*
+// @match    https://gall.dcinside.com/board/lists*
+// @match    https://gall.dcinside.com/mgallery/board/lists*
 // ==/UserScript==
 (function (window) {
   let config = JSON.parse(localStorage.getItem('dcv')) || {
@@ -84,15 +84,17 @@
     let scripts = [
       // "http://gall.dcinside.com/_js/ZeroClipboard.min.js",
       // "http://gall.dcinside.com/_js/vr_clipboard.min.js",
-      "http://gall.dcinside.com/_js/dc_common.js",
-      "http://gall.dcinside.com/_js/comment.js"
+      "https://gall.dcinside.com/_js/dc_common.js",
+      "https://gall.dcinside.com/_js/comment.js"
     ];
     scripts.forEach((script) => {
       let s = document.createElement('script');
       s.src = script;
       document.head.appendChild(s);
     });
-    while (body.firstChild) { body.removeChild(body.firstChild); }
+    while (body.firstChild) {
+      body.removeChild(body.firstChild);
+    }
 
     let modalDiv = document.createElement('div');
     modalDiv.id = 'contentModal';
@@ -146,7 +148,7 @@
 
     document.addEventListener('keydown', (event) => {
       // 27 ESC, 8 Backspace
-      if (event.keyCode === 27 || event.keyCode === 8) {
+      if (event.keyCode === 27) {
         event.preventDefault();
         closeContentModal();
       }
@@ -193,7 +195,7 @@
       window.location.replace(`http://gall.dcinside.com/${e.target.value}`);
     }
     favoritesDiv.appendChild(dropdown);
-    
+
     return favoritesDiv;
   }
 
@@ -215,7 +217,6 @@
   }
 
   const openContentModal = (event) => {
-    let articleURL = event.target.href;
     event.preventDefault();
 
     let scrollBarWidth = window.innerWidth - document.body.offsetWidth;
@@ -227,10 +228,16 @@
     let modal = document.querySelector('#contentModal');
     modal.addEventListener('click', () => closeContentModal());
     modal.childNodes.forEach((el) => el.addEventListener('click', (e) => e.stopPropagation()));
-
-    loadArticleToModal(articleURL, document.querySelector('#modalBody')).then(() => {});
     modal.style.display = 'block';
-    history.pushState(null, null, articleURL);
+
+    let articleURL = event.target.href;
+    loadArticleToModal(articleURL, document.querySelector('#modalBody'))
+      .then(() => {
+        history.pushState(null, null, articleURL);
+      }).catch((e) => {
+        console.log(e);
+        closeContentModal();
+      });
   };
 
   const loadArticleToModal = (url, modal) => {
@@ -238,7 +245,7 @@
       let template = document.createElement('template');
       template.innerHTML = responseText.trim();
       document.title = template.content.querySelector('title').innerHTML;
-      
+
       template.content.querySelector('form[name=frm]').childNodes.forEach((articleHiddenForm) => {
         if (!articleHiddenForm.id) return;
 
@@ -278,8 +285,7 @@
 
       modal.appendChild(document.importNode(content, true));
     }).catch((e) => {
-      console.log(e);
-      closeContentModal();
+      throw e;
     });
   };
 
