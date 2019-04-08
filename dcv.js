@@ -78,7 +78,7 @@
     galleryButtonDiv.appendChild(outputArray.cloneNode(true));
     galleryTop.appendChild(galleryButtonDiv);
 
-    let favoritesDiv = getFavoritesDiv();
+    let favoritesDiv = createFavoritesDiv();
     galleryTop.appendChild(favoritesDiv);
 
     let scripts = [
@@ -148,14 +148,14 @@
 
     document.addEventListener('keydown', (event) => {
       // 27 ESC, 8 Backspace
-      if (event.keyCode === 27) {
+      if (event.keyCode === 27 || event.keyCode === 8) {
         event.preventDefault();
         closeContentModal();
       }
     });
   };
 
-  const getFavoritesDiv = () => {
+  const createFavoritesDiv = () => {
     let favoritesDiv = document.createElement('div');
     favoritesDiv.id = 'favoritesDiv';
     Object.assign(favoritesDiv.style, {
@@ -213,7 +213,7 @@
     let favoritesDiv = document.querySelector('#favoritesDiv');
     document.querySelector('#favButton').removeEventListener('click', onClickFavButton);
     galleryTop.removeChild(favoritesDiv);
-    galleryTop.appendChild(getFavoritesDiv());
+    galleryTop.appendChild(createFavoritesDiv());
   }
 
   const openContentModal = (event) => {
