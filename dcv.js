@@ -8,7 +8,7 @@
 (function (window) {
   let config = JSON.parse(localStorage.getItem('dcv')) || {
     favorites: ['kancolle']
-  };
+  }
   let galleryID = (new URL(location.href)).searchParams.get('id');
   let galleryTitle = '';
 
@@ -24,12 +24,12 @@
             reject(xmlhttp.statusText);
           }
         }
-      };
+      }
 
       xmlhttp.open(method, url, true);
       xmlhttp.send();
     });
-  };
+  }
 
   const init = () => {
     let galleryList = document.querySelector('.gall_list').cloneNode(true);
@@ -50,11 +50,12 @@
     let galleryTop = document.createElement('div');
     galleryTop.id = 'galleryTop';
     Object.assign(galleryTop.style, {
+      display: 'flex',
+      alignItems: 'center',
       height: '50px',
       position: 'fixed',
       backgroundColor: '#fff',
       top: 0,
-      left: 0,
       width: '100%',
       zIndex: 1
     });
@@ -63,29 +64,69 @@
 
     let galleryButtonDiv = document.createElement('div');
     Object.assign(galleryButtonDiv.style, {
-      float: 'left',
-      position: 'absolute',
-      top: '50%',
-      transform: 'translate(0, -50%)'
+      minWidth: '100px',
+      marginLeft: '5px'
     });
 
-    document.querySelectorAll('div.list_bottom_btnbox button').forEach((button) => {
-      let btn = button.cloneNode(true);
-      btn.style.margin = '5px';
-      galleryButtonDiv.appendChild(btn);
-    });
-    let outputArray = document.querySelector('div.output_array');
-    galleryButtonDiv.appendChild(outputArray.cloneNode(true));
+    let leftBox = document.querySelector('div.left_box');
+    for (node of leftBox.querySelectorAll('button')) {
+      let tmpNode = node.cloneNode(true);
+      tmpNode.style.width = '82px'
+      tmpNode.style.height = '32px'
+      tmpNode.style.border = '1px solid #ccc'
+      tmpNode.style.borderRadius = '2px'
+      tmpNode.style.fontSize = '14px'
+      tmpNode.style.fontWeight = 'bold'
+      tmpNode.style.color = '#333'
+      tmpNode.style.marginLeft = '5px'
+
+      if (tmpNode.className === 'on') {
+        tmpNode.style.border = '1px solid #3c4790'
+        tmpNode.style.background = '#4a57a8'
+        tmpNode.style.color = '#fff'
+        tmpNode.style.textShadow = '0px - 1px #343d8e'
+      }
+      galleryButtonDiv.appendChild(tmpNode);
+    }
+
+    let centerBox = document.querySelector('div.center_box');
+    if (centerBox) {
+      let categoryList = document.createElement('ul');
+      categoryList.style.display = 'inline';
+      for (node of centerBox.querySelectorAll('a')) {
+        let tmpNode = node.cloneNode(true);
+        tmpNode.style.color = '#444';
+        if (tmpNode.className === 'on') {
+          tmpNode.style.fontWeight = 'bold'
+        }
+
+        let listItem = document.createElement('li');
+        Object.assign(listItem.style, {
+          display: 'inline-block',
+          paddingLeft: '15px'
+        });
+        listItem.appendChild(tmpNode);
+        categoryList.appendChild(listItem);
+      }
+      galleryButtonDiv.appendChild(categoryList);
+    }
+
+    // let rightBox = document.querySelector('div.right_box');
+    // for (tmpNode of rightBox.children) {
+    //   galleryButtonDiv.appendChild(tmpNode.cloneNode('true'));
+    // }
+
     galleryTop.appendChild(galleryButtonDiv);
+
+    // let searchForm = document.querySelector('#searchform');
+    // galleryTop.appendChild(searchForm.cloneNode(true));
 
     let favoritesDiv = createFavoritesDiv();
     galleryTop.appendChild(favoritesDiv);
 
     let scripts = [
-      // "http://gall.dcinside.com/_js/ZeroClipboard.min.js",
-      // "http://gall.dcinside.com/_js/vr_clipboard.min.js",
-      "https://gall.dcinside.com/_js/dc_common.js",
-      "https://gall.dcinside.com/_js/comment.js"
+      'https://gall.dcinside.com/_js/comment.js',
+      // 'https://gall.dcinside.com/_js/globalSearch.js'
     ];
     scripts.forEach((script) => {
       let s = document.createElement('script');
@@ -139,46 +180,81 @@
     body.appendChild(gallerySearching);
     body.appendChild(modalDiv);
 
+    initializeListeners();
+    history.pushState({}, '', location.href);
+  }
+
+  const initializeListeners = () => {
     document.querySelectorAll('table > tbody > tr > td.gall_tit > a').forEach((el) => {
       if (!el.className) {
-        el.removeEventListener('click', openContentModal);
-        el.addEventListener('click', openContentModal);
+        el.addEventListener('click', (event) => {
+          event.preventDefault();
+          let articleURL = event.target.href;
+          Promise.all([
+            openContentModal(),
+            loadArticleToModal(articleURL, document.querySelector('#modalBody'))
+          ]).then(() => {
+            history.pushState({}, '', articleURL);
+          }).catch((e) => {
+            console.log(e);
+            closeContentModal();
+          });
+        });
       }
     });
 
     document.addEventListener('keydown', (event) => {
-      // 27 ESC, 8 Backspace
-      if (event.keyCode === 27 || event.keyCode === 8) {
+      // 27 ESC
+      if (event.keyCode === 27) {
         event.preventDefault();
-        closeContentModal();
+        history.back();
       }
     });
-  };
+
+    window.onpopstate = () => {
+      closeContentModal();
+      document.title = galleryTitle;
+    }
+
+    let modal = document.querySelector('#contentModal');
+    modal.addEventListener('click', () => {
+      history.back();
+    });
+    modal.childNodes.forEach((el) => el.addEventListener('click', (e) => e.stopPropagation()));
+
+    document.querySelector('#galleryTop').addEventListener('click', (e) => {
+      if (e.target && e.target.matches('span#favButton')) {
+        onClickFavButton(e);
+      }
+    });
+
+    document.querySelector('#modalBody').addEventListener('click', (e) => {
+      if (e.target && e.target.matches('.btn_cmt_refresh')) {
+        onClickReplyRefreshButton();
+      }
+    });
+  }
 
   const createFavoritesDiv = () => {
     let favoritesDiv = document.createElement('div');
     favoritesDiv.id = 'favoritesDiv';
     Object.assign(favoritesDiv.style, {
-      float: 'right',
-      position: 'relative',
-      top: '50%',
-      right: 0,
-      transform: 'translate(0, -50%)'
+      display: 'flex',
+      alignItems: 'center',
+      marginLeft: 'auto',
+      marginRight: '5px'
     });
     let favButton = document.createElement('span');
     favButton.id = 'favButton';
     favButton.innerHTML = config.favorites.filter((fav) => fav == galleryID).length > 0 ? '-' : '+';
     Object.assign(favButton.style, {
-      fontSize: '30px'
+      fontSize: '30px',
+      cursor: 'pointer'
     });
-    favButton.addEventListener('click', onClickFavButton);
     favoritesDiv.appendChild(favButton);
+    favoritesDiv.innerHTML += '&nbsp;';
 
     let dropdown = document.createElement('select');
-    Object.assign(dropdown.style, {
-      margin: '5px',
-      float: 'right'
-    });
     let placeholderOption = document.createElement('option');
     placeholderOption.disabled = true;
     placeholderOption.selected = true;
@@ -211,44 +287,29 @@
 
     let galleryTop = document.querySelector('#galleryTop');
     let favoritesDiv = document.querySelector('#favoritesDiv');
-    document.querySelector('#favButton').removeEventListener('click', onClickFavButton);
     galleryTop.removeChild(favoritesDiv);
     galleryTop.appendChild(createFavoritesDiv());
   }
 
-  const openContentModal = (event) => {
-    event.preventDefault();
-
+  const openContentModal = () => {
     let scrollBarWidth = window.innerWidth - document.body.offsetWidth;
     Object.assign(document.body.style, {
       margin: `0px ${scrollBarWidth}px 0px 0px`,
       overflow: 'hidden'
     });
 
-    let modal = document.querySelector('#contentModal');
-    modal.addEventListener('click', () => closeContentModal());
-    modal.childNodes.forEach((el) => el.addEventListener('click', (e) => e.stopPropagation()));
-    modal.style.display = 'block';
+    document.querySelector('#contentModal').style.display = 'block';
+  }
 
-    let articleURL = event.target.href;
-    loadArticleToModal(articleURL, document.querySelector('#modalBody'))
-      .then(() => {
-        history.pushState(null, null, articleURL);
-      }).catch((e) => {
-        console.log(e);
-        closeContentModal();
-      });
-  };
-
-  const loadArticleToModal = (url, modal) => {
-    return ajaxRequest(url).then((responseText) => {
+  const loadArticleToModal = async (url, modal) => {
+    try {
+      const responseText = await ajaxRequest(url);
       let template = document.createElement('template');
       template.innerHTML = responseText.trim();
       document.title = template.content.querySelector('title').innerHTML;
-
       template.content.querySelector('form[name=frm]').childNodes.forEach((articleHiddenForm) => {
-        if (!articleHiddenForm.id) return;
-
+        if (!articleHiddenForm.id)
+          return;
         let t = articleHiddenForm.cloneNode(true);
         let found = false;
         let listHiddenForms = document.querySelector('form[name=frm]');
@@ -256,38 +317,38 @@
           if (form.id === t.id) {
             found = true;
             listHiddenForms.replaceChild(t, form);
-          };
+          }
         });
         if (!found) {
           listHiddenForms.appendChild(t);
-        };
-      })
-
+        }
+      });
       let content = document.createElement('div');
       content.className = 'view_content_wrap';
-
       content.appendChild(template.content.querySelector('div.gallview_head').cloneNode(true));
       let body = template.content.querySelector('div.gallview_contents').cloneNode(true);
       body.childNodes.forEach((node) => {
-        if (node.className === 'sch_alliance_box' || node.className === 'power_click') node.remove();
+        if (node.className === 'sch_alliance_box' || node.className === 'power_click')
+          node.remove();
       });
       content.appendChild(body);
       let commentContainer = template.content.querySelector('div.view_comment').cloneNode(true);
       commentContainer.querySelector('.cmt_write_box').remove();
       content.appendChild(commentContainer);
-
       let scr = document.createElement('script');
       let scrString = `
-        viewComments(1, 'VIEW_PAGE');
+        (() => {
+          viewComments(1, 'VIEW_PAGE');
+        })();
       `;
       scr.innerHTML = scrString;
       content.appendChild(scr);
-
       modal.appendChild(document.importNode(content, true));
-    }).catch((e) => {
+    }
+    catch (e) {
       throw e;
-    });
-  };
+    }
+  }
 
   const closeContentModal = () => {
     if (document.querySelector('#contentModal').style.display === 'block') {
@@ -297,10 +358,12 @@
       });
       document.querySelector('#contentModal').style.display = 'none';
       document.querySelector('#modalBody').firstChild.remove();
-      history.back();
-      document.title = galleryTitle;
     }
-  };
+  }
+
+  const onClickReplyRefreshButton = () => {
+    viewComments(1, 'D', false);
+  }
 
   init();
 })(window);
