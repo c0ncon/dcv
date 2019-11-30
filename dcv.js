@@ -89,6 +89,22 @@
       galleryButtonDiv.appendChild(tmpNode);
     }
 
+    let writeButton = document.querySelector('button#btn_write').cloneNode(true);
+    writeButton.className = '';
+    Object.assign(writeButton.style, {
+      width: '82px',
+      height: '32px',
+      borderRadius: '2px',
+      fontSize: '14px',
+      fontWeight: 'bold',
+      marginLeft: '5px',
+      border: '1px solid #3c4790',
+      background: '#4a57a8',
+      color: '#fff',
+      textShadow: '0px - 1px #343d8e'
+    });
+    galleryButtonDiv.appendChild(writeButton);
+
     let centerBox = document.querySelector('div.center_box');
     if (centerBox) {
       let categoryList = document.createElement('ul');
